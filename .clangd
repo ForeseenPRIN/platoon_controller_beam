@@ -1,0 +1,4 @@
+CompileFlags:
+  Add:
+    - "-I/home/alessio/Documenti/beam/car_controller/export/include"
+    - "-std=c++20"
