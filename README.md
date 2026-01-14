@@ -1,5 +1,7 @@
 # Vehicle Controller FMUs
 
+[![Build](https://github.com/ForeseenPRIN/platoon_controller_beam/actions/workflows/config.yml/badge.svg)](https://github.com/ForeseenPRIN/platoon_controller_beam/actions/workflows/config.yml)
+
 This project provides FMI-compliant Functional Mock-up Units (FMUs) for vehicle control in co-simulation environments, particularly designed for integration with BeamNG driving simulator.
 
 ## Overview
