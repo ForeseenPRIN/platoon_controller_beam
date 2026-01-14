@@ -1,113 +1,55 @@
-# FMU4cpp
+# Vehicle Controller FMUs
 
-FMU4cpp is a GitHub template repository that allows you to easily create cross-platform FMUs 
-compatible with [FMI 2.0](https://fmi-standard.org/downloads/) & [FMI 3.0](https://fmi-standard.org/docs/3.0/) for Co-simulation using CMake and C++.
+This project provides FMI-compliant Functional Mock-up Units (FMUs) for vehicle control in co-simulation environments, particularly designed for integration with BeamNG driving simulator.
 
-The framework generates the required `modelDescription.xml` and further packages 
-the necessary content into a ready-to-use FMU archive.
+## Overview
 
-### How do I get started?
+The project implements three FMU components for vehicle platooning and control simulations:
 
-1. Clone this repository using the "Use this template" button.
-2. Browse the example models from the `examples` branch.
-3. Implement your own model by inheriting from the provided `fmu_base` abstract class.
-4. Create an FMU target by using the provided `generate_fmu` CMake function.
-5. Build. Models for your platform are located in a `models` folder within the build folder.
-6. Upload your changes to GitHub to trigger cross-compilation.
-7. Download cross-compiled FMUs from the Actions tab.
+- **Controller** - Longitudinal and lateral vehicle controller with PID logic for throttle, brake, and steering
+- **Driver** - Generates desired acceleration profiles (constant, sinusoidal, ramp patterns)
+- **CACC** - Cooperative Adaptive Cruise Control for vehicle-to-vehicle platooning
 
+These FMUs bridge MATLAB/Maestro co-simulation environments with BeamNG's physics engine, enabling multi-platform vehicle dynamics research.
 
-### Example (BouncingBall)
+## Building
 
-```cpp
-#include <fmu4cpp/fmu_base.hpp>
+This project uses [FMU4cpp](https://github.com/Viproma/FMU4cpp) as a framework for building cross-platform FMUs.
 
-using namespace fmu4cpp;
-
-
-class BouncingBall : public fmu_base {
-
-public:
-    FMU4CPP_CTOR(BouncingBall) {
-
-        register_variable(
-                real(
-                        "height", &height)
-                        .setCausality(causality_t::OUTPUT)
-                        .setVariability(variability_t::CONTINUOUS))
-                        .setInitial(initial_t::EXACT));
-
-        register_variable(
-                real(
-                        "velocity", &velocity)
-                        .setCausality(causality_t::LOCAL)
-                        .setVariability(variability_t::CONTINUOUS));
-
-        register_variable(
-                real(
-                        "gravity", &gravity)
-                        .setCausality(causality_t::PARAMETER)
-                        .setVariability(variability_t::FIXED));
-
-        register_variable(
-                real(
-                        "bounceFactor", &bounceFactor)
-                        .setCausality(causality_t::PARAMETER)
-                        .setVariability(variability_t::FIXED));
-
-
-        BouncingBall::reset();
-    }
-
-    bool do_step(double dt) override {
-        // Update velocity with gravity
-        velocity += gravity * dt;
-        // Update height with current velocity
-        height += velocity * dt;
-
-        // Check for bounce
-        if (height <= 0.0f) {
-            height = 0.0f;                      // Reset height to ground level
-            velocity = -velocity * bounceFactor;// Reverse velocity and apply bounce factor
-        }
-
-        return true;
-    }
-
-    void reset() override {
-        height = 10;
-        velocity = 0;
-        gravity = -9.81f;
-        bounceFactor = 0.6f;
-    }
-
-private:
-    double height{};      // Current height of the ball
-    double velocity{};    // Current velocity of the ball
-    double gravity{};     // Acceleration due to gravity
-    double bounceFactor{};// Factor to reduce velocity on bounce
-};
-
-model_info fmu4cpp::get_model_info() {
-    model_info info;
-    info.modelName = "BouncingBall";
-    info.description = "A bouncing ball model";
-    return info;
-}
-
-FMU4CPP_INSTANTIATE(BouncingBall);
-
+```bash
+cmake -B build
+cmake --build build
 ```
 
+Generated FMUs are located in `build/models/fmi2/` and `build/models/fmi3/`.
 
-#### Cross-compilation
+## FMU Components
 
-Cross-compilation (64-bit linux/windows) occurs automatically when you push your changes to GitHub.
+### Controller
+Receives vehicle state (position, velocity, acceleration, orientation) from BeamNG and outputs control commands (throttle, brake, steering).
 
+### Driver
+Generates desired acceleration profiles for testing different driving scenarios:
+- Mode 1: Constant acceleration
+- Mode 2: Sinusoidal variation
+- Mode 3: Sprint patterns (acceleration followed by deceleration)
 
-Such easy, such wow.
+### CACC
+Implements cooperative adaptive cruise control using vehicle-to-vehicle communication. Maintains safe following distance and coordinates acceleration with neighboring vehicles in a platoon.
 
+## Usage
 
-### Requirements
-* C++17 compiler
-* CMake >= 3.15
+The FMUs are designed to work with:
+- BeamNG.tech simulator (for vehicle dynamics)
+- Maestro or similar FMI co-simulation orchestration tools
+- MATLAB/Simulink with FMI Toolbox
+
+All FMUs operate with a fixed time step of 5 ms.
+
+## Configuration
+
+Controller and Driver parameters can be configured through FMI parameters, including:
+- Control gains and time constants
+- Attack simulation parameters
+- Operational modes and driving patterns
+- Target distances for CACC
